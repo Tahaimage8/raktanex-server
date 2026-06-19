@@ -29,11 +29,38 @@ async function run() {
     const database = client.db("raktanex");
     const CreateDonationRequestCollection = database.collection("CreateDonationRequest")
 
+// blood-donation-request
     app.post('/api/donation-request', async (req, res) => {
       const donations = req.body;
       const result = await CreateDonationRequestCollection.insertOne(donations);
       res.send(result)
     })
+
+    app.get('/api/myDonations', async (req, res) => {
+  const query = {};
+
+  if (req.query.requesterId) {
+    query.requesterId = req.query.requesterId;
+  }
+
+  if (req.query.donationStatus) {
+    query.donationStatus = req.query.donationStatus;
+  }
+
+  const cursor = CreateDonationRequestCollection.find(query);
+  const result = await cursor.toArray();
+
+  res.send(result);
+});
+
+
+
+
+
+
+
+
+
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
