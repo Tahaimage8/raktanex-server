@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors')
 const app = express()
@@ -53,7 +53,31 @@ async function run() {
   res.send(result);
 });
 
+// view functionality 
 
+app.get('/api/donation-request/:id', async (req, res) => {
+  const id = req.params.id;
+  const requesterId = req.query.requesterId;
+
+  if (!requesterId) {
+    return res.status(401).send({ message: "Requester id is required" });
+  }
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).send({ message: "Invalid donation request id" });
+  }
+
+  const result = await CreateDonationRequestCollection.findOne({
+    _id: new ObjectId(id),
+    requesterId: requesterId,
+  });
+
+  if (!result) {
+    return res.status(404).send({ message: "Donation request not found" });
+  }
+
+  res.send(result);
+});
 
 
 
