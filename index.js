@@ -32,48 +32,59 @@ async function run() {
     );
     const UserCollection = database.collection("user");
 
- 
-app.patch("/api/admin/donation-requests/:id/status", async (req, res) => {
-  const id = req.params.id;
-  const donationStatus = req.body.donationStatus;
- 
-  if (!ObjectId.isValid(id)) {
-    return res.status(400).send({ message: "Invalid donation request id" });
-  }
- 
-  const validStatuses = ["pending", "inprogress", "done", "canceled"];
- 
-  if (!validStatuses.includes(donationStatus)) {
-    return res.status(400).send({ message: "Invalid status value" });
-  }
- 
-  const result = await CreateDonationRequestCollection.updateOne(
-    { _id: new ObjectId(id) },
-    {
-      $set: {
-        donationStatus: donationStatus,
-      },
-    },
-  );
- 
-  res.send(result);
-});
- 
-// admin/volunteer: delete ANY donation request (no requesterId check)
-app.delete("/api/admin/donation-requests/:id", async (req, res) => {
-  const id = req.params.id;
- 
-  if (!ObjectId.isValid(id)) {
-    return res.status(400).send({ message: "Invalid donation request id" });
-  }
- 
-  const result = await CreateDonationRequestCollection.deleteOne({
-    _id: new ObjectId(id),
-  });
- 
-  res.send(result);
-});
+    app.patch("/api/admin/donation-requests/:id/status", async (req, res) => {
+      const id = req.params.id;
+      const donationStatus = req.body.donationStatus;
 
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send({ message: "Invalid donation request id" });
+      }
+
+      const validStatuses = ["pending", "inprogress", "done", "canceled"];
+
+      if (!validStatuses.includes(donationStatus)) {
+        return res.status(400).send({ message: "Invalid status value" });
+      }
+
+      const result = await CreateDonationRequestCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            donationStatus: donationStatus,
+          },
+        },
+      );
+
+      res.send(result);
+    });
+    // admin volenter
+    app.get("/api/admin/donation-requests/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const result = await CreateDonationRequestCollection.findOne({
+        _id: new ObjectId(id),
+      });
+
+      if (!result) {
+        return res.status(404).send({ message: "Donation request not found" });
+      }
+
+      res.send(result);
+    });
+    // admin/volunteer: delete ANY donation request (no requesterId check)
+    app.delete("/api/admin/donation-requests/:id", async (req, res) => {
+      const id = req.params.id;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send({ message: "Invalid donation request id" });
+      }
+
+      const result = await CreateDonationRequestCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+
+      res.send(result);
+    });
 
     // get all  donation  public
     app.get("/api/donation-requests", async (req, res) => {
