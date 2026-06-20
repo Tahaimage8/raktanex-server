@@ -204,7 +204,35 @@ app.get("/api/donation-requests/:id", async (req, res) => {
   res.send(result);
 });
 
+// confirm donation from private details page
+app.patch("/api/donation-requests/:id/donate", async (req, res) => {
+  const id = req.params.id;
+  const donorInfo = req.body;
 
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).send({ message: "Invalid donation request id" });
+  }
+
+  if (!donorInfo.donorName || !donorInfo.donorEmail) {
+    return res.status(400).send({ message: "Donor information is required" });
+  }
+
+  const result = await CreateDonationRequestCollection.updateOne(
+    {
+      _id: new ObjectId(id),
+      donationStatus: "pending",
+    },
+    {
+      $set: {
+        donationStatus: "inprogress",
+        donorName: donorInfo.donorName,
+        donorEmail: donorInfo.donorEmail,
+      },
+    }
+  );
+
+  res.send(result);
+});
 
 
 
