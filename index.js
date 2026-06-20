@@ -32,55 +32,26 @@ async function run() {
     );
     const UserCollection = database.collection("user");
 
-
-
-//  get all users (with pagination + status filter) - admin only
-app.get("/api/users", async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const skip = (page - 1) * limit;
  
-  const query = {};
- 
-  if (req.query.status) {
-    query.status = req.query.status;
-  }
- 
-  const totalUsers = await UserCollection.countDocuments(query);
- 
-  const cursor = UserCollection.find(query)
-    .sort({ _id: -1 })
-    .skip(skip)
-    .limit(limit);
- 
-  const result = await cursor.toArray();
- 
-  res.send({
-    users: result,
-    totalUsers: totalUsers,
-    totalPages: Math.ceil(totalUsers / limit),
-    currentPage: page,
-  });
-});
- 
-// update user status 
-app.patch("/api/users/:id/status", async (req, res) => {
+app.patch("/api/admin/donation-requests/:id/status", async (req, res) => {
   const id = req.params.id;
-  const status = req.body.status;
+  const donationStatus = req.body.donationStatus;
  
   if (!ObjectId.isValid(id)) {
-    return res.status(400).send({ message: "Invalid user id" });
+    return res.status(400).send({ message: "Invalid donation request id" });
   }
  
-  if (status !== "active" && status !== "blocked") {
+  const validStatuses = ["pending", "inprogress", "done", "canceled"];
+ 
+  if (!validStatuses.includes(donationStatus)) {
     return res.status(400).send({ message: "Invalid status value" });
   }
  
-  const result = await UserCollection.updateOne(
+  const result = await CreateDonationRequestCollection.updateOne(
     { _id: new ObjectId(id) },
     {
       $set: {
-        status: status,
+        donationStatus: donationStatus,
       },
     },
   );
@@ -88,37 +59,113 @@ app.patch("/api/users/:id/status", async (req, res) => {
   res.send(result);
 });
  
-// update user role 
-app.patch("/api/users/:id/role", async (req, res) => {
+// admin/volunteer: delete ANY donation request (no requesterId check)
+app.delete("/api/admin/donation-requests/:id", async (req, res) => {
   const id = req.params.id;
-  const role = req.body.role;
  
   if (!ObjectId.isValid(id)) {
-    return res.status(400).send({ message: "Invalid user id" });
+    return res.status(400).send({ message: "Invalid donation request id" });
   }
  
-  const validRoles = ["donor", "volunteer", "admin"];
- 
-  if (!validRoles.includes(role)) {
-    return res.status(400).send({ message: "Invalid role value" });
-  }
- 
-  const result = await UserCollection.updateOne(
-    { _id: new ObjectId(id) },
-    {
-      $set: {
-        role: role,
-      },
-    },
-  );
+  const result = await CreateDonationRequestCollection.deleteOne({
+    _id: new ObjectId(id),
+  });
  
   res.send(result);
 });
 
 
+    // get all  donation  public
+    app.get("/api/donation-requests", async (req, res) => {
+      const cursor = CreateDonationRequestCollection.find().sort({
+        _id: -1,
+      });
 
+      const result = await cursor.toArray();
 
+      res.send(result);
+    });
 
+    //  get all users (with pagination + status filter) - admin only
+    app.get("/api/users", async (req, res) => {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+
+      const query = {};
+
+      if (req.query.status) {
+        query.status = req.query.status;
+      }
+
+      const totalUsers = await UserCollection.countDocuments(query);
+
+      const cursor = UserCollection.find(query)
+        .sort({ _id: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      const result = await cursor.toArray();
+
+      res.send({
+        users: result,
+        totalUsers: totalUsers,
+        totalPages: Math.ceil(totalUsers / limit),
+        currentPage: page,
+      });
+    });
+
+    // update user status
+    app.patch("/api/users/:id/status", async (req, res) => {
+      const id = req.params.id;
+      const status = req.body.status;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send({ message: "Invalid user id" });
+      }
+
+      if (status !== "active" && status !== "blocked") {
+        return res.status(400).send({ message: "Invalid status value" });
+      }
+
+      const result = await UserCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            status: status,
+          },
+        },
+      );
+
+      res.send(result);
+    });
+
+    // update user role
+    app.patch("/api/users/:id/role", async (req, res) => {
+      const id = req.params.id;
+      const role = req.body.role;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send({ message: "Invalid user id" });
+      }
+
+      const validRoles = ["donor", "volunteer", "admin"];
+
+      if (!validRoles.includes(role)) {
+        return res.status(400).send({ message: "Invalid role value" });
+      }
+
+      const result = await UserCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            role: role,
+          },
+        },
+      );
+
+      res.send(result);
+    });
 
     // update user profile
 
