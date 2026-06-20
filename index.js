@@ -53,7 +53,7 @@ async function run() {
   res.send(result);
 });
 
-// view functionality 
+// view-donation-request
 
 app.get('/api/donation-request/:id', async (req, res) => {
   const id = req.params.id;
@@ -78,6 +78,51 @@ app.get('/api/donation-request/:id', async (req, res) => {
 
   res.send(result);
 });
+
+// update-donation-request
+app.patch('/api/donation-request/:id', async (req, res) => {
+  const id = req.params.id;
+  const requesterId = req.query.requesterId;
+  const data = req.body;
+
+  if (!requesterId) {
+    return res.status(401).send({ message: "Requester id is required" });
+  }
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).send({ message: "Invalid donation request id" });
+  }
+
+  const updateData = {
+    recipientName: data.recipientName,
+    recipientDivision: data.recipientDivision,
+    recipientDistrict: data.recipientDistrict,
+    recipientUpazila: data.recipientUpazila,
+    hospitalName: data.hospitalName,
+    fullAddress: data.fullAddress,
+    bloodGroup: data.bloodGroup,
+    donationDate: data.donationDate,
+    donationTime: data.donationTime,
+    requestMessage: data.requestMessage,
+  };
+
+  const result = await CreateDonationRequestCollection.updateOne(
+    {
+      _id: new ObjectId(id),
+      requesterId: requesterId,
+    },
+    {
+      $set: updateData,
+    }
+  );
+
+  res.send(result);
+});
+
+
+
+
+
 
 
 
