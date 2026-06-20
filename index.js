@@ -119,9 +119,26 @@ app.patch('/api/donation-request/:id', async (req, res) => {
   res.send(result);
 });
 
+// delete-donation-request
+app.delete('/api/donation-request/:id', async (req, res) => {
+  const id = req.params.id;
+  const requesterId = req.query.requesterId;
 
+  if (!requesterId) {
+    return res.status(401).send({ message: "Requester id is required" });
+  }
 
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).send({ message: "Invalid donation request id" });
+  }
 
+  const result = await CreateDonationRequestCollection.deleteOne({
+    _id: new ObjectId(id),
+    requesterId: requesterId,
+  });
+
+  res.send(result);
+});
 
 
 
