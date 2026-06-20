@@ -71,6 +71,43 @@ async function run() {
 
       res.send(result);
     });
+
+
+    // Update donation request by admin 
+
+    app.patch("/api/admin/donation-request/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const data = req.body;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send({ message: "Invalid donation request id" });
+      }
+
+      const updateData = {
+        recipientName: data.recipientName,
+        recipientDivision: data.recipientDivision,
+        recipientDistrict: data.recipientDistrict,
+        recipientUpazila: data.recipientUpazila,
+        hospitalName: data.hospitalName,
+        fullAddress: data.fullAddress,
+        bloodGroup: data.bloodGroup,
+        donationDate: data.donationDate,
+        donationTime: data.donationTime,
+        requestMessage: data.requestMessage,
+      };
+
+      const result = await CreateDonationRequestCollection.updateOne(
+        {
+          _id: new ObjectId(id),
+        },
+        {
+          $set: updateData,
+        },
+      );
+
+      res.send(result);
+    });
     // admin/volunteer: delete ANY donation request (no requesterId check)
     app.delete("/api/admin/donation-requests/:id", async (req, res) => {
       const id = req.params.id;
