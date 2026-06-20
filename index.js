@@ -170,7 +170,7 @@ app.patch('/api/donation-request-status/:id', async (req, res) => {
 });
 
 
-// get all pending donation 
+// get all pending donation  public
 app.get("/api/donation-requests", async (req, res) => {
   const query = {
     donationStatus: "pending",
@@ -184,6 +184,28 @@ app.get("/api/donation-requests", async (req, res) => {
 
   res.send(result);
 });
+
+//  get single data pending donation  private
+app.get("/api/donation-requests/:id", async (req, res) => {
+  const id = req.params.id;
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).send({ message: "Invalid donation request id" });
+  }
+
+  const result = await CreateDonationRequestCollection.findOne({
+    _id: new ObjectId(id),
+  });
+
+  if (!result) {
+    return res.status(404).send({ message: "Donation request not found" });
+  }
+
+  res.send(result);
+});
+
+
+
 
 
 
