@@ -31,6 +31,54 @@ async function run() {
       "CreateDonationRequest",
     );
     const UserCollection = database.collection("user");
+    const FundCollection = database.collection("funds");
+
+    // GET all funds
+    app.get("/api/funds", async (req, res) => {
+      try {
+        const cursor = FundCollection.find().sort({ date: -1 });
+        const result = await cursor.toArray();
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ error: error.message });
+      }
+    });
+
+    // GET total funds
+    app.get("/api/funds/total", async (req, res) => {
+      try {
+        const pipeline = [
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$amount" },
+            },
+          },
+        ];
+
+        const result = await FundCollection.aggregate(pipeline).toArray();
+        const total = result.length > 0 ? result[0].total : 0;
+        res.send({ total });
+      } catch (error) {
+        res.status(500).send({ error: error.message });
+      }
+    });
+
+    // POST create fund
+    app.post("/api/funds", async (req, res) => {
+      try {
+        const fundData = {
+          ...req.body,
+          date: new Date(),
+        };
+
+        const result = await FundCollection.insertOne(fundData);
+        res.status(201).send(result);
+      } catch (error) {
+        res.status(500).send({ error: error.message });
+      }
+    });
+    // api admin 
 
     app.patch("/api/admin/donation-requests/:id/status", async (req, res) => {
       const id = req.params.id;
@@ -72,8 +120,7 @@ async function run() {
       res.send(result);
     });
 
-
-    // Update donation request by admin 
+    // Update donation request by admin
 
     app.patch("/api/admin/donation-request/:id", async (req, res) => {
       const id = req.params.id;
