@@ -28,6 +28,38 @@ async function run() {
 
     const database = client.db("raktanex");
     const CreateDonationRequestCollection = database.collection("CreateDonationRequest")
+    const UserCollection = database.collection("user");
+
+
+
+
+
+    // update user profile
+app.patch("/api/users/:id", async (req, res) => {
+  const id = req.params.id;
+  const data = req.body;
+
+  const updateData = {
+    name: data.name,
+    image: data.image,
+    district: data.district,
+    upazila: data.upazila,
+    bloodGroup: data.bloodGroup,
+  };
+
+  const result = await UserCollection.updateOne(
+    { id: id },
+    {
+      $set: updateData,
+    }
+  );
+
+  res.send(result);
+});
+
+
+
+
 
 // blood-donation-request
     app.post('/api/donation-request', async (req, res) => {
