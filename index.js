@@ -378,7 +378,7 @@ async function run() {
     });
 
     // get all pending donation  public
-    app.get("/api/donation-requests", async (req, res) => {
+    app.get("/api/donation-requests/pending", async (req, res) => {
       const query = {
         donationStatus: "pending",
       };
