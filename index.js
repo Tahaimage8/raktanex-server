@@ -170,7 +170,20 @@ app.patch('/api/donation-request-status/:id', async (req, res) => {
 });
 
 
+// get all pending donation 
+app.get("/api/donation-requests", async (req, res) => {
+  const query = {
+    donationStatus: "pending",
+  };
 
+  const cursor = CreateDonationRequestCollection.find(query).sort({
+    _id: -1,
+  });
+
+  const result = await cursor.toArray();
+
+  res.send(result);
+});
 
 
 
