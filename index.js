@@ -1,6 +1,7 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const cors = require("cors");
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 const app = express();
 const port = 5000;
 require("dotenv").config();
@@ -21,6 +22,55 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
+);
+
+const verifyToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer")) {
+    return res.status(401).json({ message: "unauthorized" });
+  }
+  const token = authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "unauthorized" });
+  }
+
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+    req.user = payload;
+    next();
+  } catch (error) {
+    console.log(error);
+    return res.status(401).json({ message: "unauthorized" });
+  }
+};
+const VerifyAdmin = async (req, res, next) => {
+  const user = req.user;
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ message: "forbidden" });
+  }
+  next();
+};
+ 
+const VerifyVolunteer = async (req, res, next) => {
+  const user = req.user;
+  if (!user || user.role !== "volunteer") {
+    return res.status(403).json({ message: "forbidden" });
+  }
+  next();
+};
+ 
+
+const VerifyAdminOrVolunteer = async (req, res, next) => {
+  const user = req.user;
+  if (!user || (user.role !== "admin" && user.role !== "volunteer")) {
+    return res.status(403).json({ message: "forbidden" });
+  }
+  next();
+};
 
 async function run() {
   try {
@@ -110,7 +160,7 @@ async function run() {
     });
     // api admin
 
-    app.patch("/api/admin/donation-requests/:id/status", async (req, res) => {
+    app.patch("/api/admin/donation-requests/:id/status", verifyToken,VerifyAdminOrVolunteer,async (req, res) => {
       const id = req.params.id;
       const donationStatus = req.body.donationStatus;
 
@@ -152,7 +202,7 @@ async function run() {
 
     // Update donation request by admin
 
-    app.patch("/api/admin/donation-request/:id", async (req, res) => {
+    app.patch("/api/admin/donation-request/:id", verifyToken,VerifyAdminOrVolunteer,async (req, res) => {
       const id = req.params.id;
 
       const data = req.body;
@@ -186,7 +236,7 @@ async function run() {
       res.send(result);
     });
     // admin/volunteer: delete ANY donation request (no requesterId check)
-    app.delete("/api/admin/donation-requests/:id", async (req, res) => {
+    app.delete("/api/admin/donation-requests/:id",verifyToken,VerifyAdminOrVolunteer, async (req, res) => {
       const id = req.params.id;
 
       if (!ObjectId.isValid(id)) {
@@ -201,7 +251,7 @@ async function run() {
     });
 
     // get all  donation  public
-    app.get("/api/donation-requests", async (req, res) => {
+    app.get("/api/donation-requests",async (req, res) => {
       const cursor = CreateDonationRequestCollection.find().sort({
         _id: -1,
       });
@@ -212,7 +262,7 @@ async function run() {
     });
 
     //  get all users (with pagination + status filter) - admin only
-    app.get("/api/users", async (req, res) => {
+    app.get("/api/users", verifyToken,VerifyAdmin,async (req, res) => {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const skip = (page - 1) * limit;
@@ -239,9 +289,19 @@ async function run() {
         currentPage: page,
       });
     });
+app.get("/api/users/vole", verifyToken,VerifyVolunteer, async (req, res) => {
+  try {
+    const totalUsers = await UserCollection.countDocuments();
+ 
+    res.send({ totalUsers });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+ 
 
     // update user status
-    app.patch("/api/users/:id/status", async (req, res) => {
+    app.patch("/api/users/:id/status",verifyToken,VerifyAdmin ,async (req, res) => {
       const id = req.params.id;
       const status = req.body.status;
 
@@ -266,7 +326,7 @@ async function run() {
     });
 
     // update user role
-    app.patch("/api/users/:id/role", async (req, res) => {
+    app.patch("/api/users/:id/role",verifyToken,VerifyAdmin, async (req, res) => {
       const id = req.params.id;
       const role = req.body.role;
 
@@ -313,9 +373,9 @@ async function run() {
 
       res.send(result);
     });
-
+    
     // blood-donation-request
-    app.post("/api/donation-request", async (req, res) => {
+    app.post("/api/donation-request",verifyToken,async (req, res) => {
       const donations = req.body;
       const result = await CreateDonationRequestCollection.insertOne(donations);
       res.send(result);
@@ -365,7 +425,7 @@ async function run() {
     });
 
     // update-donation-request
-    app.patch("/api/donation-request/:id", async (req, res) => {
+    app.patch("/api/donation-request/:id", verifyToken,async (req, res) => {
       const id = req.params.id;
       const requesterId = req.query.requesterId;
       const data = req.body;
@@ -470,7 +530,7 @@ async function run() {
     });
 
     //  get single data pending donation  private
-    app.get("/api/donation-requests/:id", async (req, res) => {
+    app.get("/api/donation-requests/:id", verifyToken,async (req, res) => {
       const id = req.params.id;
 
       if (!ObjectId.isValid(id)) {
