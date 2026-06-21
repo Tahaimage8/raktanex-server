@@ -41,6 +41,7 @@ const verifyToken = async (req, res, next) => {
   try {
     const { payload } = await jwtVerify(token, JWKS);
     req.user = payload;
+    console.log("verifyTokenHIT")
     next();
   } catch (error) {
     console.log(error);
@@ -52,6 +53,7 @@ const VerifyAdmin = async (req, res, next) => {
   if (!user || user.role !== "admin") {
     return res.status(403).json({ message: "forbidden" });
   }
+      console.log("verifyAdminHIT")
   next();
 };
  
@@ -60,6 +62,7 @@ const VerifyVolunteer = async (req, res, next) => {
   if (!user || user.role !== "volunteer") {
     return res.status(403).json({ message: "forbidden" });
   }
+  console.log("verifyVolunteerHIT")
   next();
 };
  
@@ -70,6 +73,7 @@ const VerifyAdminOrVolunteer = async (req, res, next) => {
     return res.status(403).json({ message: "forbidden" });
   }
   next();
+    console.log("verifyVolunteer&adminHIT")
 };
 
 async function run() {
@@ -381,7 +385,7 @@ app.get("/api/users/vole", verifyToken,VerifyVolunteer, async (req, res) => {
       res.send(result);
     });
 
-    app.get("/api/myDonations", async (req, res) => {
+    app.get("/api/myDonations",verifyToken, async (req, res) => {
       const query = {};
 
       if (req.query.requesterId) {
