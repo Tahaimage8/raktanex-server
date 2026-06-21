@@ -33,6 +33,36 @@ async function run() {
     const UserCollection = database.collection("user");
     const FundCollection = database.collection("funds");
 
+    // Get all active donors (PUBLIC)
+    app.get("/api/donors", async (req, res) => {
+      try {
+        const query = { role: "donor", status: "active" };
+
+        if (req.query.bloodGroup) {
+          query.bloodGroup = req.query.bloodGroup;
+        }
+
+        if (req.query.district) {
+          query.district = req.query.district;
+        }
+
+        if (req.query.upazila) {
+          query.upazila = req.query.upazila;
+        }
+
+        if (req.query.name) {
+          query.name = { $regex: req.query.name, $options: "i" };
+        }
+
+        const cursor = UserCollection.find(query).sort({ _id: -1 });
+        const result = await cursor.toArray();
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ error: error.message });
+      }
+    });
+
     // GET all funds
     app.get("/api/funds", async (req, res) => {
       try {
@@ -78,7 +108,7 @@ async function run() {
         res.status(500).send({ error: error.message });
       }
     });
-    // api admin 
+    // api admin
 
     app.patch("/api/admin/donation-requests/:id/status", async (req, res) => {
       const id = req.params.id;
