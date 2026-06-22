@@ -41,7 +41,7 @@ const verifyToken = async (req, res, next) => {
   try {
     const { payload } = await jwtVerify(token, JWKS);
     req.user = payload;
-    console.log("verifyTokenHIT")
+    // console.log("verifyTokenHIT")
     next();
   } catch (error) {
     console.log(error);
@@ -53,7 +53,7 @@ const VerifyAdmin = async (req, res, next) => {
   if (!user || user.role !== "admin") {
     return res.status(403).json({ message: "forbidden" });
   }
-      console.log("verifyAdminHIT")
+      // console.log("verifyAdminHIT")
   next();
 };
  
@@ -62,7 +62,7 @@ const VerifyVolunteer = async (req, res, next) => {
   if (!user || user.role !== "volunteer") {
     return res.status(403).json({ message: "forbidden" });
   }
-  console.log("verifyVolunteerHIT")
+  // console.log("verifyVolunteerHIT")
   next();
 };
  
@@ -73,7 +73,7 @@ const VerifyAdminOrVolunteer = async (req, res, next) => {
     return res.status(403).json({ message: "forbidden" });
   }
   next();
-    console.log("verifyVolunteer&adminHIT")
+    // console.log("verifyVolunteer&adminHIT")
 };
 
 async function run() {
@@ -404,7 +404,7 @@ app.get("/api/users/vole", verifyToken,VerifyVolunteer, async (req, res) => {
 
     // view-donation-request
 
-    app.get("/api/donation-request/:id", async (req, res) => {
+    app.get("/api/donation-request/:id",verifyToken ,async (req, res) => {
       const id = req.params.id;
       const requesterId = req.query.requesterId;
 
@@ -469,7 +469,7 @@ app.get("/api/users/vole", verifyToken,VerifyVolunteer, async (req, res) => {
     });
 
     // delete-donation-request
-    app.delete("/api/donation-request/:id", async (req, res) => {
+    app.delete("/api/donation-request/:id",verifyToken ,async (req, res) => {
       const id = req.params.id;
       const requesterId = req.query.requesterId;
 
@@ -490,7 +490,7 @@ app.get("/api/users/vole", verifyToken,VerifyVolunteer, async (req, res) => {
     });
     // status change
 
-    app.patch("/api/donation-request-status/:id", async (req, res) => {
+    app.patch("/api/donation-request-status/:id", verifyToken,async (req, res) => {
       const id = req.params.id;
       const requesterId = req.query.requesterId;
       const donationStatus = req.body.donationStatus;
@@ -553,7 +553,7 @@ app.get("/api/users/vole", verifyToken,VerifyVolunteer, async (req, res) => {
     });
 
     // confirm donation from private details page
-    app.patch("/api/donation-requests/:id/donate", async (req, res) => {
+    app.patch("/api/donation-requests/:id/donate",verifyToken ,async (req, res) => {
       const id = req.params.id;
       const donorInfo = req.body;
 
